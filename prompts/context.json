@@ -1,0 +1,14 @@
+{
+  "project": "mito-books",
+  "language": "en-US",
+  "paths": {
+    "backendControllers": "src/main/java/com/mitocode/controller",
+    "backendModels": "src/main/java/com/mitocode/model",
+    "frontendRoot": "frontend/mito-books-ui",
+    "prompts": "prompts"
+  },
+  "defaults": {
+    "apiUrl": "http://localhost:8080",
+    "style": "scss"
+  }
+}
