@@ -2,20 +2,19 @@ package com.mitocode.controller;
 
 import com.mitocode.dto.ClientDTO;
 import com.mitocode.dto.GenericResponse;
-import com.mitocode.model.Client;
+import com.mitocode.mapper.ClientMapper;
 import com.mitocode.service.IClientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/clients")
 @RequiredArgsConstructor
@@ -23,54 +22,42 @@ import java.util.List;
 public class ClientController {
 
     private final IClientService service;
-    @Qualifier("clientMapper")
-    private final ModelMapper modelMapper;
+    private final ClientMapper clientMapper;
 
     @GetMapping
-    public ResponseEntity<GenericResponse<ClientDTO>> getAllClients() {
-        List<ClientDTO> list = service.findAll().stream().map(this::convertToDto).toList();
-
-        //return ResponseEntity.ok(list);
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", list));
+    public Mono<ResponseEntity<GenericResponse<ClientDTO>>> getAllClients() {
+        log.info("GET /clients");
+        return service.findAll()
+                .map(clientMapper::toDto)
+                .collectList()
+                .map(list -> ResponseEntity.ok(new GenericResponse<>(200, "success", list)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GenericResponse<ClientDTO>> getClientById(@PathVariable("id") Integer id) {
-        Client obj = service.findById(id);
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", Arrays.asList(convertToDto(obj))));
+    public Mono<ResponseEntity<GenericResponse<ClientDTO>>> getClientById(@PathVariable String id) {
+        log.info("GET /clients/{}", id);
+        return service.findById(id)
+                .map(obj -> ResponseEntity.ok(new GenericResponse<>(200, "success", List.of(clientMapper.toDto(obj)))));
     }
 
     @PostMapping
-    public ResponseEntity<Void> save(@Valid @RequestBody ClientDTO dto) {
-        Client obj = service.save(convertToEntity(dto));
-
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getIdClient()).toUri();
-
-        return ResponseEntity.created(location).build();
+    public Mono<ResponseEntity<Void>> save(@Valid @RequestBody ClientDTO dto) {
+        log.info("POST /clients");
+        return service.save(clientMapper.toEntity(dto))
+                .map(saved -> ResponseEntity.created(URI.create("/clients/" + saved.getIdClient())).build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GenericResponse<ClientDTO>> update(@PathVariable("id") Integer id,@Valid @RequestBody ClientDTO dto) {
-        //client.setIdClient(id);
-        Client obj = service.update(id, convertToEntity(dto));
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", Arrays.asList(convertToDto(obj))));
+    public Mono<ResponseEntity<GenericResponse<ClientDTO>>> update(@PathVariable String id, @Valid @RequestBody ClientDTO dto) {
+        log.info("PUT /clients/{}", id);
+        return service.update(id, clientMapper.toEntity(dto))
+                .map(obj -> ResponseEntity.ok(new GenericResponse<>(200, "success", List.of(clientMapper.toDto(obj)))));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Integer id) {
-        service.delete(id);
-
-        return ResponseEntity.noContent().build();
+    public Mono<ResponseEntity<Void>> delete(@PathVariable String id) {
+        log.info("DELETE /clients/{}", id);
+        return service.delete(id)
+                .then(Mono.just(ResponseEntity.noContent().build()));
     }
-
-    private ClientDTO convertToDto(Client obj) {
-        return modelMapper.map(obj, ClientDTO.class);
-    }
-
-    private Client convertToEntity(ClientDTO dto) {
-        return modelMapper.map(dto, Client.class);
-    }
-
 }

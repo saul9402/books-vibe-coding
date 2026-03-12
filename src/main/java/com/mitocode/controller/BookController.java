@@ -2,20 +2,19 @@ package com.mitocode.controller;
 
 import com.mitocode.dto.BookDTO;
 import com.mitocode.dto.GenericResponse;
-import com.mitocode.model.Book;
+import com.mitocode.mapper.BookMapper;
 import com.mitocode.service.IBookService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/books")
 @RequiredArgsConstructor
@@ -23,61 +22,51 @@ import java.util.List;
 public class BookController {
 
     private final IBookService service;
-
-    @Qualifier("defaultMapper")
-    private final ModelMapper modelMapper;
+    private final BookMapper bookMapper;
 
     @GetMapping
-    public ResponseEntity<GenericResponse<BookDTO>> getAllBooks() {
-        List<BookDTO> list = service.findAll().stream().map(this::convertToDto).toList();
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", list));
+    public Mono<ResponseEntity<GenericResponse<BookDTO>>> getAllBooks() {
+        log.info("GET /books");
+        return service.findAll()
+                .map(bookMapper::toDto)
+                .collectList()
+                .map(list -> ResponseEntity.ok(new GenericResponse<>(200, "success", list)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GenericResponse<BookDTO>> getBookById(@PathVariable("id") Integer id) {
-        Book obj = service.findById(id);
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", Arrays.asList(convertToDto(obj))));
+    public Mono<ResponseEntity<GenericResponse<BookDTO>>> getBookById(@PathVariable String id) {
+        log.info("GET /books/{}", id);
+        return service.findById(id)
+                .map(obj -> ResponseEntity.ok(new GenericResponse<>(200, "success", List.of(bookMapper.toDto(obj)))));
     }
 
     @PostMapping
-    public ResponseEntity<Void> save(@Valid @RequestBody BookDTO dto) {
-        Book obj = service.save(convertToEntity(dto));
-
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getIdBook()).toUri();
-
-        return ResponseEntity.created(location).build();
+    public Mono<ResponseEntity<Void>> save(@Valid @RequestBody BookDTO dto) {
+        log.info("POST /books");
+        return service.save(bookMapper.toEntity(dto))
+                .map(saved -> ResponseEntity.created(URI.create("/books/" + saved.getIdBook())).build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GenericResponse<BookDTO>> update(@PathVariable("id") Integer id,@Valid @RequestBody BookDTO dto) {
-        //client.setIdBook(id);
-        Book obj = service.update(id, convertToEntity(dto));
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", Arrays.asList(convertToDto(obj))));
+    public Mono<ResponseEntity<GenericResponse<BookDTO>>> update(@PathVariable String id, @Valid @RequestBody BookDTO dto) {
+        log.info("PUT /books/{}", id);
+        return service.update(id, bookMapper.toEntity(dto))
+                .map(obj -> ResponseEntity.ok(new GenericResponse<>(200, "success", List.of(bookMapper.toDto(obj)))));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Integer id) {
-        service.delete(id);
-
-        return ResponseEntity.noContent().build();
+    public Mono<ResponseEntity<Void>> delete(@PathVariable String id) {
+        log.info("DELETE /books/{}", id);
+        return service.delete(id)
+                .then(Mono.just(ResponseEntity.noContent().build()));
     }
 
     @GetMapping("/byCategory")
-    public ResponseEntity<GenericResponse<BookDTO>> getBooksByCategory(@RequestParam("category") String category) {
-        List<BookDTO> books = service.getBooksByCategory(category).stream().map(this::convertToDto).toList();
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", books));
+    public Mono<ResponseEntity<GenericResponse<BookDTO>>> getBooksByCategory(@RequestParam String category) {
+        log.info("GET /books/byCategory?category={}", category);
+        return service.getBooksByCategory(category)
+                .map(bookMapper::toDto)
+                .collectList()
+                .map(list -> ResponseEntity.ok(new GenericResponse<>(200, "success", list)));
     }
-
-    private BookDTO convertToDto(Book obj) {
-        return modelMapper.map(obj, BookDTO.class);
-    }
-
-    private Book convertToEntity(BookDTO dto) {
-        return modelMapper.map(dto, Book.class);
-    }
-
 }

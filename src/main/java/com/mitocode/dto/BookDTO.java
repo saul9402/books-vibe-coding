@@ -1,7 +1,5 @@
 package com.mitocode.dto;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,12 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class BookDTO {
 
-    private Integer idBook;
+    private String idBook;
 
     @NotNull
-    @Min(value = 1)
-    @Max(value = 100)
-    private Integer idCategory;
+    private String idCategory;
 
     @NotNull
     private String title;

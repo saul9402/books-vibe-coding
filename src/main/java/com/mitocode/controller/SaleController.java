@@ -2,20 +2,19 @@ package com.mitocode.controller;
 
 import com.mitocode.dto.GenericResponse;
 import com.mitocode.dto.SaleDTO;
-import com.mitocode.model.Sale;
+import com.mitocode.mapper.SaleMapper;
 import com.mitocode.service.ISaleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/sales")
 @RequiredArgsConstructor
@@ -23,54 +22,42 @@ import java.util.List;
 public class SaleController {
 
     private final ISaleService service;
-    @Qualifier("saleMapper")
-    private final ModelMapper modelMapper;
+    private final SaleMapper saleMapper;
 
     @GetMapping
-    public ResponseEntity<GenericResponse<SaleDTO>> getAllSales() {
-        List<SaleDTO> list = service.findAll().stream().map(this::convertToDto).toList();
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", list));
+    public Mono<ResponseEntity<GenericResponse<SaleDTO>>> getAllSales() {
+        log.info("GET /sales");
+        return service.findAll()
+                .map(saleMapper::toDto)
+                .collectList()
+                .map(list -> ResponseEntity.ok(new GenericResponse<>(200, "success", list)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GenericResponse<SaleDTO>> getSaleById(@PathVariable("id") Integer id) {
-        Sale obj = service.findById(id);
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", Arrays.asList(convertToDto(obj))));
+    public Mono<ResponseEntity<GenericResponse<SaleDTO>>> getSaleById(@PathVariable String id) {
+        log.info("GET /sales/{}", id);
+        return service.findById(id)
+                .map(obj -> ResponseEntity.ok(new GenericResponse<>(200, "success", List.of(saleMapper.toDto(obj)))));
     }
 
     @PostMapping
-    public ResponseEntity<Void> save(@Valid @RequestBody SaleDTO dto) {
-        Sale obj = service.save(convertToEntity(dto));
-
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getIdSale()).toUri();
-
-        return ResponseEntity.created(location).build();
+    public Mono<ResponseEntity<Void>> save(@Valid @RequestBody SaleDTO dto) {
+        log.info("POST /sales");
+        return service.save(saleMapper.toEntity(dto))
+                .map(saved -> ResponseEntity.created(URI.create("/sales/" + saved.getIdSale())).build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GenericResponse<SaleDTO>> update(@PathVariable("id") Integer id,@Valid @RequestBody SaleDTO dto) {
-        //sale.setIdSale(id);
-        Sale obj = service.update(id, convertToEntity(dto));
-
-        return ResponseEntity.ok(new GenericResponse<>(200, "success", Arrays.asList(convertToDto(obj))));
+    public Mono<ResponseEntity<GenericResponse<SaleDTO>>> update(@PathVariable String id, @Valid @RequestBody SaleDTO dto) {
+        log.info("PUT /sales/{}", id);
+        return service.update(id, saleMapper.toEntity(dto))
+                .map(obj -> ResponseEntity.ok(new GenericResponse<>(200, "success", List.of(saleMapper.toDto(obj)))));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Integer id) {
-        service.delete(id);
-
-        return ResponseEntity.noContent().build();
+    public Mono<ResponseEntity<Void>> delete(@PathVariable String id) {
+        log.info("DELETE /sales/{}", id);
+        return service.delete(id)
+                .then(Mono.just(ResponseEntity.noContent().build()));
     }
-
-
-    private SaleDTO convertToDto(Sale obj) {
-        return modelMapper.map(obj, SaleDTO.class);
-    }
-
-    private Sale convertToEntity(SaleDTO dto) {
-        return modelMapper.map(dto, Sale.class);
-    }
-
 }

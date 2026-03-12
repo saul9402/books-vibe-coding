@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class ClientDTO {
 
-    private Integer idClient;
+    private String idClient;
 
     @NotNull
     //@NotEmpty

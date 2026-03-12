@@ -1,9 +1,10 @@
 package com.mitocode.model;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -11,26 +12,19 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
+@Document("sales")
 public class Sale {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idSale;
+    private String idSale;
 
-    @ManyToOne
-    @JoinColumn(name = "id_client", nullable = false, foreignKey = @ForeignKey(name = "FK_SALE_CLIENT"))
-    private Client client;
+    private Client client;              // snapshot del cliente en el momento de la venta
 
-    @Column(nullable = false)
     private LocalDateTime moment;
 
-    @Column(nullable = false, columnDefinition = "decimal(6,2)")
     private double total;
 
-    @Column(nullable = false)
     private boolean status;
 
-    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL)
-    private List<SaleDetail> details;
+    private List<SaleDetail> details;  // subdocumentos embebidos
 }

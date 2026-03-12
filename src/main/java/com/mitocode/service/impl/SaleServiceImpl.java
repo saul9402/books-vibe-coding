@@ -10,12 +10,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class SaleServiceImpl extends CRUDImpl<Sale, Integer> implements ISaleService {
+public class SaleServiceImpl extends CRUDImpl<Sale, String> implements ISaleService {
 
     private final ISaleRepo repo;
 
     @Override
-    protected IGenericRepo<Sale, Integer> getRepo() {
+    protected IGenericRepo<Sale, String> getRepo() {
         return repo;
     }
 

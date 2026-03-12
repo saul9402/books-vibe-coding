@@ -1,32 +1,29 @@
 package com.mitocode.model;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
+@Document("books")
 public class Book {
 
     @Id
-    private Integer idBook;
+    private String idBook;
 
-    @ManyToOne
-    @JoinColumn(name = "id_category", nullable = false, foreignKey = @ForeignKey(name = "FK_BOOK_CATEGORY"))
-    private Category category;
+    private Category category;  // embebido — Category es pequeña y siempre se lee con Book
 
-    @Column(nullable = false, length = 50)
+    @Indexed
     private String title;
 
-    @Column(nullable = false, length = 30)
     private String isbn;
 
-    @Column(nullable = false, length = 100)
     private String photoUrl;
 
-    @Column(nullable = false)
     private boolean status;
 }

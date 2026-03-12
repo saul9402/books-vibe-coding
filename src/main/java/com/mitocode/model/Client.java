@@ -1,28 +1,25 @@
 package com.mitocode.model;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
+@Document("clients")
 public class Client {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idClient;
+    private String idClient;
 
-    @Column(nullable = false, length = 50)
     private String primaryName;
 
-    @Column(nullable = false, length = 50)
     private String lastName;
 
-    @Column(nullable = false)
     private LocalDate birthDate;
 }

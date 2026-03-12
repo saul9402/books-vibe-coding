@@ -3,43 +3,39 @@ package com.mitocode.exception;
 import com.mitocode.dto.GenericResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.server.ServerWebExchange;
 
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalErrorHandler {
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleDefaultException(Exception ex, WebRequest request) {
-        CustomErrorResponse errorResponse = new CustomErrorResponse(LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
-
-        return new ResponseEntity<>(new GenericResponse<>(500, "failed", Arrays.asList(errorResponse)), HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleDefaultException(Exception ex, ServerWebExchange exchange) {
+        CustomErrorResponse err = new CustomErrorResponse(LocalDateTime.now(), ex.getMessage(), exchange.getRequest().getPath().value());
+        return new ResponseEntity<>(new GenericResponse<>(500, "failed", List.of(err)), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(ModelNotFoundException.class)
-    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleModelNotFoundException(ModelNotFoundException ex, WebRequest request) {
-        CustomErrorResponse errorResponse = new CustomErrorResponse(LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
-
-        return new ResponseEntity<>(new GenericResponse<>(404, "not-found", Arrays.asList(errorResponse)), HttpStatus.NOT_FOUND);
+    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleModelNotFoundException(ModelNotFoundException ex, ServerWebExchange exchange) {
+        CustomErrorResponse err = new CustomErrorResponse(LocalDateTime.now(), ex.getMessage(), exchange.getRequest().getPath().value());
+        return new ResponseEntity<>(new GenericResponse<>(404, "not-found", List.of(err)), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<CustomErrorResponse> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
-        CustomErrorResponse errorResponse = new CustomErrorResponse(LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    public ResponseEntity<CustomErrorResponse> handleAccessDeniedException(AccessDeniedException ex, ServerWebExchange exchange) {
+        CustomErrorResponse err = new CustomErrorResponse(LocalDateTime.now(), ex.getMessage(), exchange.getRequest().getPath().value());
+        return new ResponseEntity<>(err, HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleBadRequest(MethodArgumentNotValidException ex, WebRequest request) {
-        CustomErrorResponse errorResponse = new CustomErrorResponse(LocalDateTime.now(), ex.getMessage(), request.getDescription(false));
-
-        return new ResponseEntity<>(new GenericResponse<>(400, "bad-request", Arrays.asList(errorResponse)), HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(WebExchangeBindException.class)
+    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleBadRequest(WebExchangeBindException ex, ServerWebExchange exchange) {
+        CustomErrorResponse err = new CustomErrorResponse(LocalDateTime.now(), ex.getMessage(), exchange.getRequest().getPath().value());
+        return new ResponseEntity<>(new GenericResponse<>(400, "bad-request", List.of(err)), HttpStatus.BAD_REQUEST);
     }
 }

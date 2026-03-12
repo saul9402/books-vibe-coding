@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 public class SaleDTO {
 
-    private Integer idSale;
+    private String idSale;
 
     @NotNull
     private ClientDTO client;

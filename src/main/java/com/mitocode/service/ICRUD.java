@@ -1,12 +1,13 @@
 package com.mitocode.service;
 
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public interface ICRUD<T, ID> {
 
-    T save(T t);
-    T update(ID id, T t);
-    List<T> findAll();
-    T findById(ID id);
-    void delete(ID id);
+    Mono<T> save(T t);
+    Mono<T> update(ID id, T t);
+    Flux<T> findAll();
+    Mono<T> findById(ID id);
+    Mono<Void> delete(ID id);
 }

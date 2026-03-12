@@ -1,10 +1,9 @@
 package com.mitocode.service;
 
 import com.mitocode.model.Book;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
+public interface IBookService extends ICRUD<Book, String> {
 
-public interface IBookService extends ICRUD<Book, Integer> {
-
-    List<Book> getBooksByCategory(String name);
+    Flux<Book> getBooksByCategory(String name);
 }

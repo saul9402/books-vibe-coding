@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CategoryDTO {
 
-    private Integer idCategory;
+    private String idCategory;
     private String categoryName;
     private boolean status;
 }

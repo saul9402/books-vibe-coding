@@ -1,23 +1,23 @@
 package com.mitocode.model;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
+@Document("categories")
 public class Category {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idCategory;
-    
-    @Column(nullable = false, length = 20) 
+    private String idCategory;
+
+    @Indexed
     private String name;
 
-    @Column(nullable = false)
     private boolean status;
 }
