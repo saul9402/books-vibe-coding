@@ -1,0 +1,12 @@
+spring:
+  main:
+    web-application-type: reactive          # Fuerza contexto WebFlux; evita Tomcat/Servlet
+  data:
+    mongodb:
+      uri: mongodb://root:123@localhost:27017/mito_books?authSource=admin
+
+logging:
+  level:
+    root: INFO
+    com.mitocode: DEBUG
+

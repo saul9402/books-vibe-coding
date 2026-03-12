@@ -1,0 +1,554 @@
+# MitoBooks — Documentación Técnica
+
+## Descripción General
+
+**MitoBooks** es una REST API construida con **Spring Boot 3.5.6** (Java 21) para gestionar una librería con seguimiento de ventas.  
+Tecnologías principales: **PostgreSQL 16**, **Spring Data JPA**, **ModelMapper**, **Lombok** y **Bean Validation (Jakarta)**.
+
+---
+
+## Stack Tecnológico
+
+| Tecnología           | Versión  | Rol                                  |
+|----------------------|----------|--------------------------------------|
+| Spring Boot          | 3.5.6    | Framework principal                  |
+| Java                 | 21       | Lenguaje                             |
+| PostgreSQL           | 16       | Base de datos relacional             |
+| Spring Data JPA      | —        | ORM / acceso a datos                 |
+| ModelMapper          | —        | Mapeo DTO ↔ Entidad                  |
+| Lombok               | —        | Reducción de boilerplate             |
+| Jakarta Validation   | —        | Validación de DTOs                   |
+| Docker Compose       | —        | Contenedor de base de datos          |
+
+---
+
+## Arquitectura en Capas
+
+```
+HTTP Request
+     │
+     ▼
+┌──────────────┐
+│  Controller  │  ← Maneja HTTP, delega al servicio
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│   Service    │  ← Lógica de negocio (interfaz + impl)
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Repository  │  ← Acceso a datos (Spring Data JPA)
+└──────────────┘
+```
+
+---
+
+## Patrón CRUD Genérico
+
+### Interfaz base `ICRUD<T, ID>`
+
+Todos los servicios heredan operaciones comunes:
+
+```java
+public interface ICRUD<T, ID> {
+    T save(T t);
+    T update(ID id, T t);
+    List<T> findAll();
+    T findById(ID id);
+    void delete(ID id);
+}
+```
+
+### Implementación abstracta `CRUDImpl<T, ID>`
+
+Centraliza la lógica CRUD y lanza `ModelNotFoundException` si el ID no existe:
+
+```java
+public abstract class CRUDImpl<T, ID> implements ICRUD<T, ID> {
+
+    protected abstract IGenericRepo<T, ID> getRepo();
+
+    @Override
+    public T update(ID id, T t) {
+        getRepo().findById(id)
+            .orElseThrow(() -> new ModelNotFoundException("ID NOT FOUND: " + id));
+        return getRepo().save(t);
+    }
+
+    @Override
+    public void delete(ID id) {
+        getRepo().findById(id)
+            .orElseThrow(() -> new ModelNotFoundException("ID NOT FOUND: " + id));
+        getRepo().deleteById(id);
+    }
+    // ...save, findAll, findById
+}
+```
+
+### Repositorio genérico `IGenericRepo<T, ID>`
+
+```java
+@NoRepositoryBean
+public interface IGenericRepo<T, ID> extends JpaRepository<T, ID> {
+}
+```
+
+---
+
+## Modelo de Dominio
+
+### Entidades y relaciones
+
+```
+Category ←──── Book ──────┐
+                           │
+Client ──────── Sale ──────┤
+                    └──── SaleDetail
+```
+
+### Entidad `Book`
+
+```java
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+public class Book {
+
+    @Id
+    private Integer idBook;
+
+    @ManyToOne
+    @JoinColumn(name = "id_category", nullable = false,
+                foreignKey = @ForeignKey(name = "FK_BOOK_CATEGORY"))
+    private Category category;
+
+    @Column(nullable = false, length = 50)
+    private String title;
+
+    @Column(nullable = false, length = 30)
+    private String isbn;
+
+    @Column(nullable = false, length = 100)
+    private String photoUrl;
+
+    @Column(nullable = false)
+    private boolean status;
+}
+```
+
+### Entidad `Sale` (con cascada)
+
+```java
+@Entity
+public class Sale {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer idSale;
+
+    @ManyToOne
+    @JoinColumn(name = "id_client", nullable = false,
+                foreignKey = @ForeignKey(name = "FK_SALE_CLIENT"))
+    private Client client;
+
+    @Column(nullable = false)
+    private LocalDateTime moment;
+
+    @Column(nullable = false, columnDefinition = "decimal(6,2)")
+    private double total;
+
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL)
+    private List<SaleDetail> details;
+}
+```
+
+---
+
+## DTOs y Validación
+
+Los DTOs simplifican los objetos anidados a IDs y aplican reglas de validación:
+
+```java
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class BookDTO {
+
+    private Integer idBook;
+
+    @NotNull
+    @Min(value = 1)
+    @Max(value = 100)
+    private Integer idCategory;   // ← ID plano en lugar del objeto Category
+
+    @NotNull
+    private String title;
+
+    @NotNull
+    private String isbn;
+
+    @NotNull
+    private String photoUrl;
+
+    @NotNull
+    private boolean status;
+}
+```
+
+> **Regla clave**: los controladores trabajan siempre con DTOs; las entidades sólo viven en la capa de servicio/repositorio.
+
+---
+
+## Mapeo DTO ↔ Entidad con ModelMapper
+
+### Configuración en `MapperConfig.java`
+
+Se definen tres beans con comportamientos diferentes:
+
+```java
+@Configuration
+public class MapperConfig {
+
+    // 1. Mapper por defecto (mapeo automático por nombre)
+    @Bean(name = "defaultMapper")
+    public ModelMapper defaultMapper() {
+        return new ModelMapper();
+    }
+
+    // 2. Mapper con renombrado de campos (Client ↔ ClientDTO)
+    @Bean(name = "clientMapper")
+    public ModelMapper clientMapper() {
+        ModelMapper mapper = new ModelMapper();
+
+        mapper.createTypeMap(Client.class, ClientDTO.class)
+            .addMapping(Client::getPrimaryName,
+                        (dest, v) -> dest.setFirstName((String) v))
+            .addMapping(Client::getLastName,
+                        (dest, v) -> dest.setSurname((String) v));
+
+        mapper.createTypeMap(ClientDTO.class, Client.class)
+            .addMapping(ClientDTO::getFirstName,
+                        (dest, v) -> dest.setPrimaryName((String) v))
+            .addMapping(ClientDTO::getSurname,
+                        (dest, v) -> dest.setLastName((String) v));
+
+        return mapper;
+    }
+
+    // 3. Mapper para ventas (relaciones anidadas)
+    @Bean(name = "saleMapper")
+    public ModelMapper saleMapper() {
+        ModelMapper mapper = new ModelMapper();
+
+        mapper.createTypeMap(Sale.class, SaleDTO.class)
+            .addMapping(e -> e.getClient().getPrimaryName(),
+                        (dest, v) -> dest.getClient().setFirstName((String) v));
+
+        return mapper;
+    }
+}
+```
+
+### Uso en controladores
+
+```java
+@Qualifier("defaultMapper")
+private final ModelMapper modelMapper;
+
+private BookDTO convertToDto(Book obj) {
+    return modelMapper.map(obj, BookDTO.class);
+}
+
+private Book convertToEntity(BookDTO dto) {
+    return modelMapper.map(dto, Book.class);
+}
+```
+
+---
+
+## Controladores REST
+
+Ejemplo completo con `BookController`:
+
+```java
+@RestController
+@RequestMapping("/books")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+public class BookController {
+
+    private final IBookService service;
+
+    @Qualifier("defaultMapper")
+    private final ModelMapper modelMapper;
+
+    @GetMapping
+    public ResponseEntity<GenericResponse<BookDTO>> getAllBooks() {
+        List<BookDTO> list = service.findAll().stream()
+            .map(this::convertToDto).toList();
+        return ResponseEntity.ok(new GenericResponse<>(200, "success", list));
+    }
+
+    @PostMapping
+    public ResponseEntity<Void> save(@Valid @RequestBody BookDTO dto) {
+        Book obj = service.save(convertToEntity(dto));
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+            .path("/{id}").buildAndExpand(obj.getIdBook()).toUri();
+        return ResponseEntity.created(location).build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<GenericResponse<BookDTO>> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody BookDTO dto) {
+        Book obj = service.update(id, convertToEntity(dto));
+        return ResponseEntity.ok(
+            new GenericResponse<>(200, "success", Arrays.asList(convertToDto(obj))));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/byCategory")
+    public ResponseEntity<GenericResponse<BookDTO>> getBooksByCategory(
+            @RequestParam("category") String category) {
+        List<BookDTO> books = service.getBooksByCategory(category)
+            .stream().map(this::convertToDto).toList();
+        return ResponseEntity.ok(new GenericResponse<>(200, "success", books));
+    }
+}
+```
+
+---
+
+## Formato de Respuesta `GenericResponse<T>`
+
+Todas las respuestas exitosas y de error usan este record:
+
+```java
+public record GenericResponse<T>(
+    int status,
+    String message,
+    List<T> data
+) {}
+```
+
+**Ejemplo de respuesta exitosa:**
+```json
+{
+  "status": 200,
+  "message": "success",
+  "data": [
+    {
+      "idBook": 1,
+      "idCategory": 3,
+      "title": "Clean Code",
+      "isbn": "978-0132350884",
+      "photoUrl": "https://example.com/img/cleancode.jpg",
+      "status": true
+    }
+  ]
+}
+```
+
+**Ejemplo de respuesta de error:**
+```json
+{
+  "status": 404,
+  "message": "not-found",
+  "data": [
+    {
+      "timestamp": "2026-03-11T10:30:00",
+      "message": "ID NOT FOUND: 99",
+      "details": "uri=/books/99"
+    }
+  ]
+}
+```
+
+---
+
+## Manejo de Excepciones
+
+`GlobalErrorHandler` intercepta todas las excepciones con `@RestControllerAdvice`:
+
+```java
+@RestControllerAdvice
+public class GlobalErrorHandler {
+
+    // 500 - Error genérico
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleDefaultException(
+            Exception ex, WebRequest request) {
+        return new ResponseEntity<>(
+            new GenericResponse<>(500, "failed", Arrays.asList(buildError(ex, request))),
+            HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // 404 - Entidad no encontrada
+    @ExceptionHandler(ModelNotFoundException.class)
+    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleModelNotFoundException(
+            ModelNotFoundException ex, WebRequest request) {
+        return new ResponseEntity<>(
+            new GenericResponse<>(404, "not-found", Arrays.asList(buildError(ex, request))),
+            HttpStatus.NOT_FOUND);
+    }
+
+    // 400 - Validación fallida de DTO
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<GenericResponse<CustomErrorResponse>> handleBadRequest(
+            MethodArgumentNotValidException ex, WebRequest request) {
+        return new ResponseEntity<>(
+            new GenericResponse<>(400, "bad-request", Arrays.asList(buildError(ex, request))),
+            HttpStatus.BAD_REQUEST);
+    }
+
+    // 403 - Acceso denegado
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<CustomErrorResponse> handleAccessDeniedException(
+            AccessDeniedException ex, WebRequest request) {
+        return new ResponseEntity<>(buildError(ex, request), HttpStatus.FORBIDDEN);
+    }
+}
+```
+
+---
+
+## Repositorios con JPQL
+
+Los repositorios heredan de `IGenericRepo` y añaden consultas personalizadas con `@Query`:
+
+```java
+public interface IBookRepo extends IGenericRepo<Book, Integer> {
+
+    // Equivale a: SELECT * FROM book b
+    //             INNER JOIN category c ON b.id_category = c.id_category
+    //             WHERE c.name LIKE %name%
+    @Query("FROM Book b WHERE b.category.name LIKE %:name%")
+    List<Book> getBooksByCategory(@Param("name") String name);
+}
+```
+
+---
+
+## Implementación de un Servicio
+
+```java
+@Service
+@RequiredArgsConstructor
+public class BookServiceImpl extends CRUDImpl<Book, Integer> implements IBookService {
+
+    private final IBookRepo repo;
+
+    @Override
+    protected IGenericRepo<Book, Integer> getRepo() {
+        return repo;  // Expone el repo al CRUDImpl genérico
+    }
+
+    @Override
+    public List<Book> getBooksByCategory(String name) {
+        return repo.getBooksByCategory(name);  // Método específico del dominio
+    }
+}
+```
+
+---
+
+## Configuración de Base de Datos
+
+**`application.yml`**
+```yaml
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create          # Recrea el esquema al iniciar
+    generate-ddl: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+```
+
+**`docker-compose.yml`** (PostgreSQL 16 en contenedor)
+```yaml
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres_db_iad
+    environment:
+      POSTGRES_DB: mitobooksdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+```
+
+---
+
+## Cómo Agregar una Nueva Entidad
+
+Sigue estos 6 pasos en orden:
+
+1. **Modelo** — Crear clase en `/model` con `@Entity`, `@Data`, `@Id`
+2. **DTO** — Crear clase en `/dto` con validaciones `@NotNull`, `@Min`, `@Max`
+3. **Repositorio** — Crear interfaz en `/repo` que extienda `IGenericRepo<T, ID>`
+4. **Interfaz de servicio** — Crear en `/service` extendiendo `ICRUD<T, ID>`
+5. **Implementación** — Crear en `/service/impl` extendiendo `CRUDImpl<T, ID>`
+6. **Controlador** — Crear en `/controller` con `@RestController @RequestMapping`
+
+```java
+// Paso 3 - Repositorio
+public interface IAuthorRepo extends IGenericRepo<Author, Integer> { }
+
+// Paso 4 - Interfaz de servicio
+public interface IAuthorService extends ICRUD<Author, Integer> { }
+
+// Paso 5 - Implementación
+@Service
+@RequiredArgsConstructor
+public class AuthorServiceImpl extends CRUDImpl<Author, Integer>
+        implements IAuthorService {
+
+    private final IAuthorRepo repo;
+
+    @Override
+    protected IGenericRepo<Author, Integer> getRepo() {
+        return repo;
+    }
+}
+```
+
+---
+
+## Endpoints Disponibles
+
+| Método | Ruta                       | Descripción                        |
+|--------|----------------------------|------------------------------------|
+| GET    | `/books`                   | Listar todos los libros            |
+| GET    | `/books/{id}`              | Obtener libro por ID               |
+| POST   | `/books`                   | Crear libro nuevo                  |
+| PUT    | `/books/{id}`              | Actualizar libro                   |
+| DELETE | `/books/{id}`              | Eliminar libro                     |
+| GET    | `/books/byCategory?category=` | Filtrar por categoría           |
+| GET    | `/categories`              | Listar categorías                  |
+| GET    | `/clients`                 | Listar clientes                    |
+| GET    | `/sales`                   | Listar ventas                      |
+| POST   | `/sales`                   | Registrar venta con detalles       |
+
+---
+
+## Ejecución del Proyecto
+
+```bash
+# 1. Levantar base de datos
+docker-compose up -d
+
+# 2. Compilar y ejecutar
+./mvnw spring-boot:run
+
+# 3. Verificar
+curl http://localhost:8080/books
+```
