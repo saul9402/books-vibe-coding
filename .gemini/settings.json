@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "airbnb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@openbnb/mcp-server-airbnb",
+        "--ignore-robots-txt"
+      ]
+    },
+    "context7": {
+      "httpUrl": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-b0424e85-591a-453c-bf13-05181ad38fd7",
+        "Accept": "application/json, text/event-stream"
+      }
+    }
+  }
+}
