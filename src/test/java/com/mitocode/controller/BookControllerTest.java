@@ -3,6 +3,7 @@ package com.mitocode.controller;
 import com.mitocode.dto.BookDTO;
 import com.mitocode.exception.ModelNotFoundException;
 import com.mitocode.mapper.BookMapper;
+import com.mitocode.model.Author;
 import com.mitocode.model.Book;
 import com.mitocode.model.Category;
 import com.mitocode.service.IBookService;
@@ -35,11 +36,12 @@ class BookControllerTest {
 
     private Book sampleBook() {
         return new Book("book-1", new Category("cat-1", "Fiction", true),
+                new Author("author-1", "Gabriel", "Garcia Marquez", "Colombia"),
                 "Clean Code", "978-0132350884", "http://img.png", true);
     }
 
     private BookDTO sampleDto() {
-        return new BookDTO("book-1", "cat-1", "Clean Code", "978-0132350884", "http://img.png", true);
+        return new BookDTO("book-1", "cat-1", "author-1", "Clean Code", "978-0132350884", "http://img.png", true);
     }
 
     @Test
@@ -104,7 +106,7 @@ class BookControllerTest {
     @Test
     void saveBook_nullTitle_returns400() {
         // @NotNull on title triggers WebExchangeBindException → GlobalErrorHandler → 400
-        BookDTO invalid = new BookDTO("book-1", "cat-1", null, "978-0", "http://img.png", true);
+        BookDTO invalid = new BookDTO("book-1", "cat-1", "author-1", null, "978-0", "http://img.png", true);
 
         client.post().uri("/books")
                 .contentType(MediaType.APPLICATION_JSON)

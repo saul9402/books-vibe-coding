@@ -37,6 +37,7 @@ class SaleServiceImplTest {
     private Sale sampleSale() {
         Client c = new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15));
         Book b = new Book("book-1", new Category("cat-1", "Fiction", true),
+                new Author("author-1", "Gabriel", "Garcia Marquez", "Colombia"),
                 "Clean Code", "978-0132350884", "http://img.png", true);
         SaleDetail detail = new SaleDetail(b, 29.99, (short) 1, true);
         return new Sale("sale-1", c, FIXED_TIME, 29.99, true, List.of(detail));
@@ -144,4 +145,3 @@ class SaleServiceImplTest {
                 .verify();
     }
 }
-

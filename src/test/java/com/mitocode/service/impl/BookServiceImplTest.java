@@ -1,9 +1,12 @@
 package com.mitocode.service.impl;
 
 import com.mitocode.exception.ModelNotFoundException;
+import com.mitocode.model.Author;
 import com.mitocode.model.Book;
 import com.mitocode.model.Category;
 import com.mitocode.repo.IBookRepo;
+import com.mitocode.service.IAuthorService;
+import com.mitocode.service.ICategoryService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,21 +19,32 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class BookServiceImplTest {
 
     @Mock IBookRepo repo;
+    @Mock IAuthorService authorService;
+    @Mock ICategoryService categoryService;
     @InjectMocks BookServiceImpl service;
 
     @AfterEach
     void resetMocks() {
-        Mockito.reset(repo);
+        Mockito.reset(repo, authorService, categoryService);
+    }
+
+    private Author sampleAuthor() {
+        return new Author("author-1", "Gabriel", "Garcia Marquez", "Colombia");
+    }
+
+    private Category sampleCategory() {
+        return new Category("cat-1", "Fiction", true);
     }
 
     private Book sampleBook() {
-        return new Book("book-1", new Category("cat-1", "Fiction", true),
+        return new Book("book-1", sampleCategory(), sampleAuthor(),
                 "Clean Code", "978-0132350884", "http://img.png", true);
     }
 
@@ -39,7 +53,7 @@ class BookServiceImplTest {
     @Test
     void findAll_emitsAllBooks() {
         Book b1 = sampleBook();
-        Book b2 = new Book("book-2", new Category("cat-1", "Fiction", true),
+        Book b2 = new Book("book-2", sampleCategory(), sampleAuthor(),
                 "Refactoring", "978-0201485677", "http://img2.png", true);
         when(repo.findAll()).thenReturn(Flux.just(b1, b2));
 
@@ -83,10 +97,13 @@ class BookServiceImplTest {
 
     @Test
     void save_returnsSavedEntity() {
-        Book input = new Book(null, new Category("cat-1", "Fiction", true),
+        Book input = new Book(null, sampleCategory(), sampleAuthor(),
                 "Clean Code", "978-0132350884", "http://img.png", true);
         Book saved = sampleBook();
-        when(repo.save(input)).thenReturn(Mono.just(saved));
+
+        when(authorService.findById(anyString())).thenReturn(Mono.just(sampleAuthor()));
+        when(categoryService.findById(anyString())).thenReturn(Mono.just(sampleCategory()));
+        when(repo.save(any(Book.class))).thenReturn(Mono.just(saved));
 
         StepVerifier.create(service.save(input))
                 .expectNext(saved)
@@ -98,9 +115,12 @@ class BookServiceImplTest {
     @Test
     void update_found_savesUpdated() {
         Book existing = sampleBook();
-        Book updated = new Book("book-1", new Category("cat-1", "Fiction", true),
+        Book updated = new Book("book-1", sampleCategory(), sampleAuthor(),
                 "Clean Code v2", "978-0132350884", "http://img.png", true);
+
         when(repo.findById("book-1")).thenReturn(Mono.just(existing));
+        when(authorService.findById(anyString())).thenReturn(Mono.just(sampleAuthor()));
+        when(categoryService.findById(anyString())).thenReturn(Mono.just(sampleCategory()));
         when(repo.save(any())).thenReturn(Mono.just(updated));
 
         StepVerifier.create(service.update("book-1", updated))
@@ -158,4 +178,3 @@ class BookServiceImplTest {
                 .verifyComplete();
     }
 }
-

@@ -18,6 +18,8 @@ public class Book {
 
     private Category category;  // embebido — Category es pequeña y siempre se lee con Book
 
+    private Author author; // Agregamos la relación con Autor
+
     @Indexed
     private String title;
 

@@ -8,25 +8,16 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookDTO {
+public class AuthorDTO {
 
-    private String idBook;
-
-    @NotNull
-    private String idCategory;
-
-    @NotNull
     private String idAuthor;
 
     @NotNull
-    private String title;
+    private String firstName;
 
     @NotNull
-    private String isbn;
+    private String lastName;
 
     @NotNull
-    private String photoUrl;
-
-    @NotNull
-    private boolean status;
+    private String country;
 }
