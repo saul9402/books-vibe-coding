@@ -1,0 +1,8 @@
+description = "Review source code"
+prompt = """
+Ask the user to enter a file path
+1. Quality analysis
+2. Possible errors
+3. Recommendations
+Use Markdown formatting and a constructive tone.
+"""

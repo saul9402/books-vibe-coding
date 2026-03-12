@@ -1,0 +1,2 @@
+description = "A simple command that greets the user."
+prompt = "Respond exactly with 'Hello, World!'"
