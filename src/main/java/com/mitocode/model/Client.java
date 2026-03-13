@@ -22,4 +22,8 @@ public class Client {
     private String lastName;
 
     private LocalDate birthDate;
+
+    private Integer age;
+
+    private String employment;
 }

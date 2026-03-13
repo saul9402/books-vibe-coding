@@ -31,7 +31,7 @@ class ClientServiceImplTest {
     }
 
     private Client sampleClient() {
-        return new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15));
+        return new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15), 34);
     }
 
     // ── findAll ────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ class ClientServiceImplTest {
     @Test
     void findAll_emitsAllClients() {
         Client c1 = sampleClient();
-        Client c2 = new Client("cli-2", "Jane", "Smith", LocalDate.of(1992, 5, 20));
+        Client c2 = new Client("cli-2", "Jane", "Smith", LocalDate.of(1992, 5, 20), 32);
         when(repo.findAll()).thenReturn(Flux.just(c1, c2));
 
         StepVerifier.create(service.findAll())
@@ -82,7 +82,7 @@ class ClientServiceImplTest {
 
     @Test
     void save_returnsSavedEntity() {
-        Client input = new Client(null, "John", "Doe", LocalDate.of(1990, 1, 15));
+        Client input = new Client(null, "John", "Doe", LocalDate.of(1990, 1, 15), 34);
         Client saved = sampleClient();
         when(repo.save(input)).thenReturn(Mono.just(saved));
 
@@ -96,7 +96,7 @@ class ClientServiceImplTest {
     @Test
     void update_found_savesUpdated() {
         Client existing = sampleClient();
-        Client updated = new Client("cli-1", "Johnny", "Doe", LocalDate.of(1990, 1, 15));
+        Client updated = new Client("cli-1", "Johnny", "Doe", LocalDate.of(1990, 1, 15), 34);
         when(repo.findById("cli-1")).thenReturn(Mono.just(existing));
         when(repo.save(any())).thenReturn(Mono.just(updated));
 

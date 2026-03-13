@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(mkdir:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Grep|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/block-env.js"
+          }
+        ]
+      }
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "shadcn"
+  ],
+  "enabledPlugins": {
+    "example-skills@anthropic-agent-skills": true
+  },
+  "spinnerTipsEnabled": true
+
+}

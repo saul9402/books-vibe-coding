@@ -39,7 +39,7 @@ class SaleControllerTest {
     private static final LocalDateTime FIXED_TIME = LocalDateTime.of(2024, 1, 15, 10, 0);
 
     private Sale sampleSale() {
-        Client c = new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15));
+        Client c = new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15), 34);
         Book b = new Book("book-1", new Category("cat-1", "Fiction", true),
                 new Author("author-1", "Gabriel", "Garcia Marquez", "Colombia"),
                 "Clean Code", "978-0", "http://img.png", true);
@@ -48,7 +48,7 @@ class SaleControllerTest {
     }
 
     private SaleDTO sampleDto() {
-        ClientDTO clientDto = new ClientDTO("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15));
+        ClientDTO clientDto = new ClientDTO("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15), 34);
         BookDTO bookDto = new BookDTO("book-1", "cat-1", "author-1", "Clean Code", "978-0", "http://img.png", true);
         SaleDetailDTO detailDto = new SaleDetailDTO(null, bookDto, 29.99, (short) 1, true);
         return new SaleDTO("sale-1", clientDto, FIXED_TIME, 29.99, true, List.of(detailDto));

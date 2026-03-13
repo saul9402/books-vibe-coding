@@ -35,11 +35,11 @@ class ClientControllerTest {
     }
 
     private Client sampleClient() {
-        return new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15));
+        return new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15), 34);
     }
 
     private ClientDTO sampleDto() {
-        return new ClientDTO("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15));
+        return new ClientDTO("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15), 34);
     }
 
     @Test
@@ -104,7 +104,7 @@ class ClientControllerTest {
     @Test
     void saveClient_invalidFirstName_returns400() {
         // "Jo" has length 2 → violates @Size(min = 3) → WebExchangeBindException → 400
-        ClientDTO invalid = new ClientDTO(null, "Jo", "Doe", LocalDate.of(1990, 1, 15));
+        ClientDTO invalid = new ClientDTO(null, "Jo", "Doe", LocalDate.of(1990, 1, 15), null);
 
         client.post().uri("/clients")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -116,7 +116,7 @@ class ClientControllerTest {
     @Test
     void updateClient_returnsOk() {
         Client updated = sampleClient();
-        ClientDTO updatedDto = new ClientDTO("cli-1", "Jane", "Doe", LocalDate.of(1990, 1, 15));
+        ClientDTO updatedDto = new ClientDTO("cli-1", "Jane", "Doe", LocalDate.of(1990, 1, 15), 34);
         when(clientMapper.toEntity(any())).thenReturn(updated);
         when(service.update(eq("cli-1"), any())).thenReturn(Mono.just(updated));
         when(clientMapper.toDto(any())).thenReturn(updatedDto);

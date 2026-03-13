@@ -27,8 +27,11 @@ public class ClientDTO {
     @NotNull
     private LocalDate birthDateClient;
 
-    /*@Email
-    @Pattern(regexp = "[0-9]+")
-    @Max(value = 99)
-    @Min(value = 1)*/
+    @NotNull
+    @Min(value = 1)
+    @Max(value = 120)
+    private Integer age;
+
+    @Size(max = 100)
+    private String employment;
 }

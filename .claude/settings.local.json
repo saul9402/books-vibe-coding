@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books\" && ./mvnw clean compile -q 2>&1 | tail -20)",
+      "Bash(cd \"C:/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books\" && ./mvnw test 2>&1 | tail -20)",
+      "Bash(cd \"C:/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books\" && ./mvnw test 2>&1 | tail -25)",
+      "Bash(cd \"C:/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books/generate\" && npm install docx 2>&1 | tail -5)",
+      "Bash(cd \"C:/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books/generate\" && node create-doc.js 2>&1)",
+      "Bash(uname -s 2>/dev/null || echo \"Windows\" && node --version 2>/dev/null && npx --version 2>/dev/null)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:context7.com)",
+      "Bash(claude mcp:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://mcp.github.com/sse --max-time 5 2>&1)",
+      "Bash(curl -sI https://mcp.github.com/sse --max-time 10 2>&1 | head -10)",
+      "Bash(npm show:*)",
+      "Bash(curl -v --max-time 8 https://mcp.github.com/sse 2>&1 | head -20)",
+      "Bash(gh repo:*)",
+      "Bash(node --version && npm --version)",
+      "Read(//c/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/**)",
+      "Bash(npm create:*)",
+      "Bash(cd /c/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books-react && npm install 2>&1 | tail -5)",
+      "Bash(cd /c/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books-react && npm install react-router-dom axios lucide-react 2>&1 | tail -5)",
+      "Bash(cd /c/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books-react && npm install -D tailwindcss @tailwindcss/vite 2>&1 | tail -5)",
+      "Bash(cd /c/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books-react && npm install -D tailwindcss @tailwindcss/vite --legacy-peer-deps 2>&1 | tail -5)",
+      "Bash(cd /c/Users/saul_/Documents/projects/courses/mitocode/ia_para_developers/mito-books-react && npm run build 2>&1)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest init --yes 2>&1 | tail -20)",
+      "Bash(npx shadcn@latest add button card badge table dialog input label select separator skeleton toast sheet --yes 2>&1 | tail -20)",
+      "Bash(npx shadcn@latest add sonner --yes 2>&1 | tail -5)",
+      "Bash(npx shadcn@latest add sonner --yes --legacy-peer-deps 2>&1 | tail -5 && npx shadcn@latest add dropdown-menu --yes --legacy-peer-deps 2>&1 | tail -3)",
+      "Bash(npm run:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Write|Edit|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/block-env.js"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -35,7 +35,7 @@ class SaleServiceImplTest {
     private static final LocalDateTime FIXED_TIME = LocalDateTime.of(2024, 1, 15, 10, 0);
 
     private Sale sampleSale() {
-        Client c = new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15));
+        Client c = new Client("cli-1", "John", "Doe", LocalDate.of(1990, 1, 15), 34);
         Book b = new Book("book-1", new Category("cat-1", "Fiction", true),
                 new Author("author-1", "Gabriel", "Garcia Marquez", "Colombia"),
                 "Clean Code", "978-0132350884", "http://img.png", true);
